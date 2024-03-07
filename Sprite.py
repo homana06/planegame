@@ -1,4 +1,4 @@
-import pygame 
+import pygame
 import math
 
 class Plane():
