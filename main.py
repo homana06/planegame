@@ -1,42 +1,46 @@
 import pygame
 from Sprite import *
 import sys
+from Map import *
 
 pygame.init()
 pygame.joystick.init()
 try:
-  pygame.mixer.init()
+    pygame.mixer.init()
 except pygame.error:
-  print("error line 8")
-  
-    
+    print("error line 8")
+
+
 
 run = True
 frame = 0
 Blue = (0, 0, 255)
-Black = (0,0,0)
+Black = (0, 0, 0)
 backx = 0
 backy = 0
 running = True
-screen = pygame.display.set_mode([900,900])
+screen = pygame.display.set_mode([900, 900])
 pygame.display.set_caption("Zoomies")
 try:
-  pygame.mixer.music.load("Music/Brinstar.mp3")
-  pygame.mixer.music.set_volume(0)
-  pygame.mixer.music.play(-1)
+    pygame.mixer.music.load("Music/Brinstar.mp3")
+    pygame.mixer.music.set_volume(0)
+    pygame.mixer.music.play(-1)
 except pygame.error:
-  print("Error loading or playing the music file.")
+    print("Error loading or playing the music file.")
 clock = pygame.time.Clock()
-scalefactor = 900
+
 image = pygame.image.load("images/Jet.png")
-background1 = pygame.image.load("images/background.png")
-background_size = (scalefactor,scalefactor)
-backgroundf = pygame.transform.scale(background1,background_size)
-player = Plane(450,450,image)
-#---------------movement--------------------------------------|||||||||||||||||||||||||||||||
+player = Plane(450, 450, image)
+
+background = TilingBackground(900, 900, 10, 10, 0.01)
+EDGE_THRESHOLD = 5
+SCROLL_SPEED = 2
+SCREEN_HEIGHT = 900
+SCREEN_WIDTH = 900
+
+# ---------------movement--------------------------------------|||||||||||||||||||||||||||||||
 keys = pygame.key.get_pressed()
 num_joysticks = pygame.joystick.get_count()
-
 
 if num_joysticks > 0:
     joysticks = []
@@ -54,31 +58,43 @@ if joysticks:
     joystick1 = joysticks[0]
     joystick2 = joysticks[1] if num_joysticks > 1 else None
 
-#-----------------------------------------------------Run Loop----------------------------------------------------------------------------------------------------------------------------------
-while running:  #main running loop
-  keys = pygame.key.get_pressed()
-  screen.fill(Black)
- 
-  screen.blit(backgroundf, (backx, backy))
- 
-  for event in pygame.event.get():
-    if event.type == pygame.QUIT:
-      running = False
+# -----------------------------------------------------Run Loop----------------------------------------------------------------------------------------------------------------------------------
+
+while running:  # main running loop
+    keys = pygame.key.get_pressed()
+    screen.fill(Black)
+    player.rect.x = player.get_x()
+    player.rect.y = player.get_y()
+
+    background.draw(screen)
+
+    pygame.display.flip()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    if event.type == pygame.JOYAXISMOTION:
+        # Check if joystick objects are initialized
+        axis = event.axis
+        value = event.value
+        #print(axis, "---", value)
+        if axis == 2 or axis == 3:
+            player.rotate_right_joystick(joystick1, value, screen)
+        elif axis == 0 or axis == 1:
+            player.move_left_joystick(joystick1, screen)
+
+    if player.rect.x < EDGE_THRESHOLD:
+        background.scroll(SCROLL_SPEED, 0)
+    elif player.rect.x > SCREEN_WIDTH - EDGE_THRESHOLD:
+        background.scroll(-SCROLL_SPEED, 0)
+    if player.rect.y < EDGE_THRESHOLD:
+        background.scroll(0, SCROLL_SPEED)
+    elif player.rect.y > SCREEN_HEIGHT - EDGE_THRESHOLD:
+        background.scroll(0, -SCROLL_SPEED)
 
 
-  if event.type == pygame.JOYAXISMOTION:
-    # Check if joystick objects are initialized
-    axis = event.axis
-    value = event.value
-    print(axis,"---",value)
-    if axis == 2 or axis == 3:
-      player.rotate_right_joystick(joystick1,value, screen)
-    elif axis == 0 or axis == 1:
-      player.move_left_joystick(joystick1, screen)
+    clock.tick(60)
 
-    
-  clock.tick(60)
-
-  pygame.display.flip()
+    pygame.display.flip()
 pygame.mixer.music.stop()
 pygame.quit()
